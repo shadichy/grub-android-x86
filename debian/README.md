@@ -1,3 +1,6 @@
+grub-android-prober for Debian
+-----------------------------
+
 # grub-android-x86
 
 This is GRUB Configuration for Android on PC detection for Linux
@@ -43,37 +46,4 @@ Specify max recursive directory search level
 GRUB_ANDROID_SEARCH_DEPTH=5
 ```
 
-## Build
-
-First clone the repository
-
-```sh
-git clone https://github.com/shadichy/grub-android-x86
-cd ./grub-android-x86
-```
-
-### Arch Linux
-
-```sh
-makepkg -si
-```
-
-### Debian
-
-```sh
-dpkg-buildpackage
-```
-
-### Quick install
-
-Make sure you have su permission (`sudo` or `doas`)
-
-```sh
-wget -O /etc/grub.d/30_android-prober https://github.com/shadichy/grub-android-x86/raw/master/30_android-prober
-```
-
-Or with `curl`
-
-```sh
-curl -o /etc/grub.d/30_android-prober https://github.com/shadichy/grub-android-x86/raw/master/30_android-prober
-```
+ -- Shadichy <shadichy.dev@gmail.com>  Sat, 08 Jul 2023 17:09:32 +0700

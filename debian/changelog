@@ -1,0 +1,5 @@
+grub-android-prober (0.0.3-1) UNRELEASED; urgency=medium
+
+  * Initial release. (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+
+ -- Shadichy <shadichy.dev@gmail.com>  Sat, 08 Jul 2023 17:09:32 +0700

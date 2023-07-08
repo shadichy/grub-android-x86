@@ -1,0 +1,16 @@
+#!/usr/bin/make -f
+
+binary: binary-arch
+
+binary-arch: binary-indep
+
+binary-indep:
+	dh_installdirs -a
+	dh_install -i
+	dh_fixperms -i
+	dh_installdeb -i
+	dh_gencontrol -i
+	dh_installdocs -i
+	dh_installchangelogs -i
+	dh_compress -i
+	dh_builddeb -i

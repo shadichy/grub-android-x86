@@ -1,2 +1,5 @@
 .vscode
 *.pkg.*
+/src
+/pkg
+/debian/grub-android-prober
