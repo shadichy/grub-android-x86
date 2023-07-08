@@ -212,7 +212,7 @@ parse_path() {
 			;;
 		*)
 			os="AOSP"
-			ver="$(gver "$buildver" "build" "release") $(gprop "$buildprop" "build.flavor=")"
+			ver="$(gver "$buildver" "build" "release") $(gprop "$buildprop" "build.flavor")"
 			;;
 		esac
 	done
