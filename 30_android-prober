@@ -74,6 +74,9 @@ GENKERNEL_ARCH=$_
 LM=
 grep -oqw 'lm' /proc/cpuinfo && LM=1
 
+# check if kernel supports ntfs3
+modinfo ntfs3 >/dev/null && NTFS=ntfs3 || NTFS=ntfs-3g
+
 sub_indent() { echo -e "$submenu_indentation$*"; }
 gfind() { grep "$2" <<<"${1}"; }
 gprop() {
@@ -126,7 +129,7 @@ _mount_fs() {
 	disktmp="$(mktemp)"
 	rm -f "$disktmp"
 	mkdir -p "$disktmp" || true
-	mount -o ro${2:+,$2} -t "${3:-auto}" "$1" "$disktmp"
+	mount -o ro${2:+,$2} -t "${3:-auto}" "$1" "$disktmp" 2>/dev/null
 	echo "$disktmp"
 }
 
@@ -164,7 +167,9 @@ parse_path() {
 		buildprop \
 		abi \
 		buildver \
-		type
+		type \
+		os \
+		ver
 
 	path=${path%/*}
 
@@ -280,9 +285,7 @@ find_os() {
 		mountpoint="$pre_mounted"
 	else
 		fs=$2
-		if [ "$2" = "ntfs" ]; then
-			modinfo ntfs3 >/dev/null && fs=ntfs3 || fs=ntfs-3g
-		fi
+		[ "$2" = "ntfs" ] && fs=$NTFS
 		mountpoint="$(_mount_fs "$1" "" "$fs")"
 	fi
 
