@@ -337,4 +337,3 @@ done <<<"$(
 		grep -Ev "loop|ram|nbd|fd" |
 		sed "s|^|/dev/|g"
 )"
-#địt mẹ nigga
