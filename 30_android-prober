@@ -70,7 +70,7 @@ gen_entry() {
 	detect=$1
 	shift
 
-	IFS=":"
+	IFS="​"
 	set -- $detect
 
 	device=$1
@@ -79,6 +79,8 @@ gen_entry() {
 	kernels=$4
 	initrds=$5
 	ucodes=$6
+	system=$7
+	data=$8
 	ucode_list=""
 	ucode=""
 	disk="$(prepare_grub_to_access_device "$device")"
@@ -100,28 +102,55 @@ gen_entry() {
 	for ucode in $ucodes; do
 		ucode_list="$ucode_list $src/$ucode"
 	done
-	for kernel in $kernels; do
-		for initrd in $initrds; do
-			entry() {
-				android_entry \
-					"$os" \
-					"$src" \
-					"${src}/${kernel}" \
-					"${ucode_list# } ${src}/${initrd}" \
-					"$disk" \
-					"$boot_device_id" \
-					"$1"
-			}
 
-			if [ "$type" = "default" ]; then
-				MAIN_ENTRY="$(entry default)"
-				type=extended
-				submenu_indentation=$grub_tab
-			fi
-			EXTENDED_ENTRIES="$EXTENDED_ENTRIES
-$(entry extended)"
+	entry() {
+		android_entry \
+			"$os" \
+			"$src" \
+			"${src}/${2}" \
+			"${ucode_list# } ${src}/${3}" \
+			"$disk" \
+			"$boot_device_id" \
+			"$1"
+	}
+
+	parse_to_entry() {
+		if [ "$type" = "default" ]; then
+			MAIN_ENTRY="$(entry default "$1" "$2")"
+			type=extended
+			submenu_indentation=$grub_tab
+		fi
+		EXTENDED_ENTRIES="$EXTENDED_ENTRIES
+$(entry extended "$1" "$2")"
+	}
+
+	case "$kernels" in
+	gearlock*)
+		ROOT_DEVICE=$device
+		ROOT_UUID=$(${grub_probe} --device "$device" --target=fs_uuid 2>/dev/null)
+
+		[ ! "$GRUB_DISABLE_LINUX_UUID" = "true" ] &&
+			[ "$ROOT_UUID" ] &&
+			ROOT_DEVICE="UUID=$ROOT_UUID"
+
+		old_cmdline=$GRUB_CMDLINE_ANDROID
+		GRUB_CMDLINE_ANDROID="$GRUB_CMDLINE_ANDROID ROOT=$ROOT_DEVICE SYSTEM=$system DATA=$data GEARLOCK=$kernels"
+
+		for kver in $initrds; do
+			parse_to_entry default "boot/kernel-$kver" "boot/initrd-$kver.img"
 		done
-	done
+
+		GRUB_CMDLINE_ANDROID=$old_cmdline
+		;;
+	*)
+		for kernel in $kernels; do
+			for initrd in $initrds; do
+				parse_to_entry default "$kernel" "$initrd"
+			done
+		done
+		;;
+	esac
+
 	unset IFS
 
 	cat <<EOF
@@ -136,7 +165,7 @@ EOF
 }
 IFS="
 "
-for detect in $(android-prober); do
+for detect in $(grub-android-prober); do
 	gen_entry "$detect"
 done
 unset IFS

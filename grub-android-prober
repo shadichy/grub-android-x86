@@ -1,5 +1,8 @@
 #!/bin/bash
 
+[ "$EUID" = 0 ] ||
+	{ echo "ERROR: Please run as root" && exit 1; }
+
 . "/usr/share/grub/grub-mkconfig_lib"
 
 # Android x86 supported file systems
@@ -181,29 +184,51 @@ parse_path() {
 	esac
 	vendor=$_
 
-	local kernels initrds ucodes
-	for kernel in "$path"/vmlinu[xz]* "$path"/kernel*; do
-		[ -f "$kernel" ] &&
-			kernels="$kernels,$(basename "$kernel")"
-	done
+	local kernels initrds ucodes system data
 
-	for initrd in "$path"/initrd*.img "$path"/initramfs*.img; do
-		[ -f "$initrd" ] &&
-			initrds="$initrds,$(basename "$initrd")"
-	done
+	if [ -d "$path"/gearlock ] || [ -e "$path"/gearlock.??? ]; then
+		[ -d "$path"/gearlock ] &&
+			kernels=gearlock ||
+			kernels=$(ls -d "$path"/gearlock.??? || head -1) &&
+			kernels=$(basename "$kernels")
+
+		list=
+		for i in "$path"/boot/kernel-*; do
+			grub_file_is_not_garbage "$i" || continue
+			version="${i#*-}"
+			[ -e "$path/boot/initrd-${version}.img" ] && list="$version,$list"
+		done
+		initrds=${list%,}
+
+		system=$(basename "$path_sysimg")
+		data=$(ls -d "$path"/data* || head -1)
+		data=$(basename "$data")
+	else
+		for kernel in "$path"/vmlinu[xz]* "$path"/kernel*; do
+			grub_file_is_not_garbage "$kernel" &&
+				kernels="$kernels,$(basename "$kernel")"
+		done
+
+		for initrd in "$path"/initrd*.img "$path"/initramfs*.img; do
+			grub_file_is_not_garbage "$initrd" &&
+				initrds="$initrds,$(basename "$initrd")"
+		done
+	fi
 
 	for microcode in "$path"/${vendor}-ucode.img "$path"/${vendor}-microcode.img; do
 		[ -f "$microcode" ] &&
 			ucodes="$ucodes,$(basename "$microcode")"
 	done
 
-	printf '%s:%s:%s:%s:%s:%s\n' \
-		"$device" \
-		"$src" \
-		"$os" \
+	printf '%s​%s​%s​%s​%s​%s​%s​%s\n​​​​' \
+		"${device}" \
+		"${src}" \
+		"${os}" \
 		"${kernels#,}" \
 		"${initrds#,}" \
-		"${ucodes#,}"
+		"${ucodes#,}" \
+		"${system}" \
+		"${data}"
 }
 
 find_os() {

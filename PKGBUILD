@@ -8,14 +8,11 @@ arch=('any')
 license=('GPLv3')
 url='https://github.com/shadichy/grub-android-x86.git'
 depends=('grub' 'bash')
-source=('30_android-prober' 'android-prober')
-sha512sums=(
-	'f7cf0cf867d72b4f1181a8b409c6dd28e92b984dd7bd8ac189a8f46791fd1dedb460a6fc237665946e718e1b739c152e6725a4ddbb8de7a36f44d619a16e8161'
-	'73368cd3996e662011ace1073740737b33786b4f59af12eeb274c7dfa8a0a60832b7219080a7959ee9395583680994a8ef2ae214fecc9560f841c4d80ce747cb'
-)
+source=('30_android-prober' 'grub-android-prober')
+sha512sums=( '6108a8efc766a68aa68e02e3e6910965df25fa589024e4416fa941db51faf9ab7f2ad8974eb336fc9228c8b5ae1e28504417f7f59e78f0761f0a2d5b6830d41e' '15ccc97cf81647092cbbb448445f008199f131d2e30e722cf589eb07fb0fb7cd3617bab7335adfe64a12fd07be49b3a2299e58a4b80e2ec75a1c8cd35dafdb09' )
 
 package() {
 	cd "$srcdir"
 	install -Dm755 "30_android-prober" "$pkgdir/etc/grub.d/30_android-prober"
-	install -Dm755 "android-prober" "$pkgdir/usr/bin/30_android-prober"
+	install -Dm755 "grub-android-prober" "$pkgdir/usr/bin/grub-android-prober"
 }
