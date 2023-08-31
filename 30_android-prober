@@ -37,7 +37,10 @@ android_entry() {
 	type="$7"
 
 	[ "$type" != "default" ] &&
-		title="$title, with ${kernel##*/}, and ${initrd##*/}"
+		case "$kernels" in
+		gearlock*) title="$title, with ${kernel##*/}" ;;
+		*) title="$title, with ${kernel##*/}, and ${initrd##*/}" ;;
+		esac
 
 	sub_indent "menuentry '$(echo "$title" | grub_quote)' ${CLASS} \$menuentry_id_option '$OS-${src##*/}-${kernel##*/}-${initrd##*/}-$type-$device_id' {"
 
@@ -137,7 +140,7 @@ $(entry extended "$1" "$2")"
 		GRUB_CMDLINE_ANDROID="$GRUB_CMDLINE_ANDROID ROOT=$ROOT_DEVICE SYSTEM=$system DATA=$data GEARLOCK=$kernels"
 
 		for kver in $initrds; do
-			parse_to_entry default "boot/kernel-$kver" "boot/initrd-$kver.img"
+			parse_to_entry "boot/kernel-$kver" "boot/initrd-$kver.img"
 		done
 
 		GRUB_CMDLINE_ANDROID=$old_cmdline
@@ -145,7 +148,7 @@ $(entry extended "$1" "$2")"
 	*)
 		for kernel in $kernels; do
 			for initrd in $initrds; do
-				parse_to_entry default "$kernel" "$initrd"
+				parse_to_entry "$kernel" "$initrd"
 			done
 		done
 		;;

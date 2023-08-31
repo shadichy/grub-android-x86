@@ -220,7 +220,7 @@ parse_path() {
 			ucodes="$ucodes,$(basename "$microcode")"
 	done
 
-	printf '%s​%s​%s​%s​%s​%s​%s​%s\n​​​​' \
+	printf '%s​%s​%s​%s​%s​%s​%s​%s\n' \
 		"${device}" \
 		"${src}" \
 		"${os}" \
