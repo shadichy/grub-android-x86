@@ -4,11 +4,42 @@ This is GRUB Configuration for Android on PC detection for Linux
 
 Works with Android x86, not tested with ARM ROM like PrimeOS, LineageOS,...
 
+## Install
+
+### Arch Linux
+
+```sh
+yay -S grub-android-prober
+# or
+paru -S grub-android-prober
+# or
+pamac install grub-android-prober
+# or any aur helper you got
+```
+
+Alternatively, you can use the following method for distros that don't have official package
+
+### Quick install
+
+Make sure you have su permission (`sudo` or `doas`) and /usr/local/bin is in `$PATH`
+
+```sh
+wget -O /etc/grub.d/30_android-prober https://github.com/shadichy/grub-android-x86/raw/master/30_android-prober
+wget -O /usr/local/bin/grub-android-prober https://github.com/shadichy/grub-android-x86/raw/master/grub-android-prober
+```
+
+Or with `curl`
+
+```sh
+curl -Lo /etc/grub.d/30_android-prober https://github.com/shadichy/grub-android-x86/raw/master/30_android-prober
+curl -Lo /usr/local/bin/grub-android-prober https://github.com/shadichy/grub-android-x86/raw/master/grub-android-prober
+```
+
 ## Configuration
 
 These are configurations of grub-android-prober in `/etc/defaults/grub`
 
-Default values are in `30_android-prober`
+Default values are in file `grub-android-prober`
 
 ### GRUB_ANDROID_SUPPORTED_FS
 
@@ -42,36 +73,6 @@ Specify max recursive directory search level
 
 ```sh
 GRUB_ANDROID_SEARCH_DEPTH=5
-```
-
-## Install
-
-### Arch Linux
-
-```sh
-yay -S grub-android-x86
-```
-
-Or with `paru`
-
-```sh
-paru -S grub-android-x86
-```
-
-Alternatively, you can use any aur helper to install the package
-
-### Quick install
-
-Make sure you have su permission (`sudo` or `doas`)
-
-```sh
-wget -O /etc/grub.d/30_android-prober https://github.com/shadichy/grub-android-x86/raw/master/30_android-prober
-```
-
-Or with `curl`
-
-```sh
-curl -o /etc/grub.d/30_android-prober https://github.com/shadichy/grub-android-x86/raw/master/30_android-prober
 ```
 
 ## Build

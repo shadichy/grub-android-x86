@@ -1,1 +1,2 @@
 30_grub-android-prober etc/grub.d
+grub-android-prober usr/bin
