@@ -101,11 +101,6 @@ gen_entry() {
 	# yet, so it's empty. In a submenu it will be equal to '\t' (one tab).
 	submenu_indentation=""
 
-	IFS=","
-	for ucode in $ucodes; do
-		ucode_list="$ucode_list $src/$ucode"
-	done
-
 	entry() {
 		android_entry \
 			"$os" \
@@ -127,8 +122,13 @@ gen_entry() {
 $(entry extended "$1" "$2")"
 	}
 
+	IFS=","
 	case "$kernels" in
 	gearlock*)
+		for ucode in $ucodes; do
+			ucode_list="$ucode_list $src/boot/$ucode"
+		done
+
 		ROOT_DEVICE=$device
 		ROOT_UUID=$(${grub_probe} --device "$device" --target=fs_uuid 2>/dev/null)
 
@@ -146,6 +146,10 @@ $(entry extended "$1" "$2")"
 		GRUB_CMDLINE_ANDROID=$old_cmdline
 		;;
 	*)
+		for ucode in $ucodes; do
+			ucode_list="$ucode_list $src/$ucode"
+		done
+
 		for kernel in $kernels; do
 			for initrd in $initrds; do
 				parse_to_entry "$kernel" "$initrd"

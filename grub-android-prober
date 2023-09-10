@@ -203,6 +203,11 @@ parse_path() {
 		system=$(basename "$path_sysimg")
 		data=$(ls -d "$path"/data* || head -1)
 		data=$(basename "$data")
+
+		for microcode in "$path"/boot/${vendor}-ucode.img "$path"/boot/${vendor}-microcode.img; do
+			[ -f "$microcode" ] &&
+				ucodes="$ucodes,$(basename "$microcode")"
+		done
 	else
 		for kernel in "$path"/vmlinu[xz]* "$path"/kernel*; do
 			grub_file_is_not_garbage "$kernel" &&
@@ -213,12 +218,12 @@ parse_path() {
 			grub_file_is_not_garbage "$initrd" &&
 				initrds="$initrds,$(basename "$initrd")"
 		done
-	fi
 
-	for microcode in "$path"/${vendor}-ucode.img "$path"/${vendor}-microcode.img; do
-		[ -f "$microcode" ] &&
-			ucodes="$ucodes,$(basename "$microcode")"
-	done
+		for microcode in "$path"/${vendor}-ucode.img "$path"/${vendor}-microcode.img; do
+			[ -f "$microcode" ] &&
+				ucodes="$ucodes,$(basename "$microcode")"
+		done
+	fi
 
 	printf '%s​%s​%s​%s​%s​%s​%s​%s\n' \
 		"${device}" \
