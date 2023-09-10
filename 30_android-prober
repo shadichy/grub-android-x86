@@ -38,7 +38,7 @@ android_entry() {
 
 	[ "$type" != "default" ] &&
 		case "$kernels" in
-		gearlock*) title="$title, with ${kernel##*/}" ;;
+		gearlock*) title="$title, with ${kernel##*/} - $system" ;;
 		*) title="$title, with ${kernel##*/}, and ${initrd##*/}" ;;
 		esac
 

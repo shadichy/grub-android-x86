@@ -59,9 +59,9 @@ Specify which paths will be excluded during search
 GRUB_ANDROID_EXCLUDE="/bin,/boot/efi,/dev,/lib,/lib64,/proc,/run,/sbin,/sys,/tmp"
 ```
 
-### GRUB_ANDROID_SEARCH
+### GRUB_ANDROID_INCLUDE
 
-Specify which files/folders will be search for/detected
+Specify which files/folders will be search for/detecting
 
 ```sh
 GRUB_ANDROID_SEARCH="system system.img system.sfs"

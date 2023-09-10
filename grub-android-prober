@@ -16,7 +16,7 @@
 : "${GRUB_ANDROID_EXCLUDE:="/bin,/boot/efi,/efi,/EFI,/dev,/etc,/lib,/lib64,/lib32,/proc,/run,/sbin,/sys,/usr,/tmp,/Program Files,/Program Files (x86),/ProgramData,/Windows,/Volumes,/System,/Library,/cores"}"
 
 # Search image names
-: "${GRUB_ANDROID_SEARCH:="system system.img system.sfs system.efs"}"
+: "${GRUB_ANDROID_INCLUDE:="system system.img system.sfs system.efs system_a system_a.img system_a.sfs system_a.efs system_b system_b.img system_b.sfs system_b.efs"}"
 
 # Search recursiveness depth
 : "${GRUB_ANDROID_SEARCH_DEPTH:=3}"
@@ -313,7 +313,7 @@ mount_find() {
 DEPTH=$GRUB_ANDROID_SEARCH_DEPTH
 
 po=
-for f in ${GRUB_ANDROID_SEARCH}; do
+for f in ${GRUB_ANDROID_INCLUDE}; do
 	INCLUDE="$INCLUDE $po -name \"$f\""
 	po="-o"
 done
