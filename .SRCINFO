@@ -10,6 +10,6 @@ pkgbase = grub-android-prober
 	source = 30_android-prober
 	source = grub-android-prober
 	sha512sums = f0daaf98b86ace7022e62932659fa3a450fca07681f9d6c44fdb40d96d3176b908c63e0c2dbb2b8d4f990f6d0aadc32bfe1d07dd3e47b263816cd58bf5bec612
-	sha512sums = 71e33a709d4fc87d0afcec6fa79856f234199303c876b6c35a8a448fa98aeae668f7ed1c14bea3a4b9e227f817cb0b3d78abb4a703a7bef356b44e2b19d6dde2
+	sha512sums = 8dbff7179389ea20c5114d4a0bd0f4d00578253ae4a1c9645712c61758ca0337f71b9e574b583ec6b22bdb9fac3576589358bb6a5d920cee33048833d6560e43
 
 pkgname = grub-android-prober
