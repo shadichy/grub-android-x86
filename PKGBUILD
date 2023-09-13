@@ -9,7 +9,7 @@ license=('GPLv3')
 url='https://github.com/shadichy/grub-android-x86.git'
 depends=('grub' 'bash')
 source=('30_android-prober' 'grub-android-prober')
-sha512sums=( 'f0daaf98b86ace7022e62932659fa3a450fca07681f9d6c44fdb40d96d3176b908c63e0c2dbb2b8d4f990f6d0aadc32bfe1d07dd3e47b263816cd58bf5bec612' '8dbff7179389ea20c5114d4a0bd0f4d00578253ae4a1c9645712c61758ca0337f71b9e574b583ec6b22bdb9fac3576589358bb6a5d920cee33048833d6560e43' )
+sha512sums=( 'e8fda692a322bf1403cbb0bf05263f7ded26e1f4618a98f689efe9a2fdd24deb5d5ae94aca2e07aa58f33ca61717ab1fd4d43fe1cd13760011d8674e182b54c1' 'b3b764892d642f4efb63db4b20a8cea789896cb14f4df98f5bbc96eb5d24f1ec59dea3c1942aa145ff96092ec54a51e7cd34da755cb0a854e57cdbc99a2bd806' )
 
 package() {
 	cd "$srcdir"

@@ -18,6 +18,7 @@ set -e
 # along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
 
 . "$pkgdatadir/grub-mkconfig_lib"
+. /etc/default/grub
 
 export TEXTDOMAIN=grub
 export TEXTDOMAINDIR="${datarootdir}/locale"

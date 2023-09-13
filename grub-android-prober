@@ -245,7 +245,7 @@ find_os() {
 	done
 	unset IFS
 
-	foundpaths="$(timeout 30 eval 'find "'"$mountpoint"'" -maxdepth '"$DEPTH"' \(' "$INCLUDE" '\)' "$EXCLUDE")" || return 1
+	foundpaths="$(eval 'timeout 30 find "'"$mountpoint"'" -maxdepth '"$DEPTH"' \(' "$INCLUDE" '\)' "$EXCLUDE")" || return 1
 
 	while read -r path; do
 		parse_path "$path" "$device" || continue
