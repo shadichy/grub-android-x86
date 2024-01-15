@@ -21,11 +21,12 @@ Alternatively, you can use the following method for distros that don't have offi
 
 ### Quick install
 
-Make sure you have su permission (`sudo` or `doas`) and /usr/local/bin is in `$PATH`
+Make sure you have su permission (`sudo su` or `doas su`) and /usr/local/bin is in `$PATH`
 
 ```sh
 wget -O /etc/grub.d/30_android-prober https://github.com/shadichy/grub-android-x86/raw/master/30_android-prober
 wget -O /usr/local/bin/grub-android-prober https://github.com/shadichy/grub-android-x86/raw/master/grub-android-prober
+chmod +x /etc/grub.d/30_android-prober /usr/local/bin/grub-android-prober
 ```
 
 Or with `curl`
@@ -33,6 +34,7 @@ Or with `curl`
 ```sh
 curl -Lo /etc/grub.d/30_android-prober https://github.com/shadichy/grub-android-x86/raw/master/30_android-prober
 curl -Lo /usr/local/bin/grub-android-prober https://github.com/shadichy/grub-android-x86/raw/master/grub-android-prober
+chmod +x /etc/grub.d/30_android-prober /usr/local/bin/grub-android-prober
 ```
 
 ## Configuration

@@ -225,7 +225,7 @@ parse_path() {
 		done
 	fi
 
-	printf '%s​%s​%s​%s​%s​%s​%s​%s\n' \
+	printf '%s\0%s\0%s\0%s\0%s\0%s\0%s\0%s\n' \
 		"${device}" \
 		"${src}" \
 		"${os}" \
