@@ -48,6 +48,7 @@ parse_proc_mdstat() {
 			udevadm info "$@"
 		}
 	fi
+	# shellcheck disable=SC2162
 	while read line; do
 		for word in $line; do
 			dev="${word%%\[*}"
@@ -186,6 +187,7 @@ parse_path() {
 
 	local kernels initrds ucodes system data
 
+	# shellcheck disable=SC2144
 	if [ -d "$path"/gearlock ] || [ -e "$path"/gearlock.??? ]; then
 		[ -d "$path"/gearlock ] &&
 			kernels=gearlock ||
@@ -211,12 +213,12 @@ parse_path() {
 	else
 		for kernel in "$path"/vmlinu[xz]* "$path"/kernel*; do
 			grub_file_is_not_garbage "$kernel" &&
-				kernels="$kernels,$(basename "$kernel")"
+				kernels="$(basename "$kernel"),$kernels"
 		done
 
 		for initrd in "$path"/initrd*.img "$path"/initramfs*.img; do
 			grub_file_is_not_garbage "$initrd" &&
-				initrds="$initrds,$(basename "$initrd")"
+				initrds="$(basename "$initrd"),$initrds"
 		done
 
 		for microcode in "$path"/${vendor}-ucode.img "$path"/${vendor}-microcode.img; do
@@ -229,8 +231,8 @@ parse_path() {
 		"${device}" \
 		"${src}" \
 		"${os}" \
-		"${kernels#,}" \
-		"${initrds#,}" \
+		"${kernels%,}" \
+		"${initrds%,}" \
 		"${ucodes#,}" \
 		"${system}" \
 		"${data}"
@@ -295,7 +297,8 @@ mount_find() {
 	local part_mnt mnt_pt fs
 
 	fs=$(blkol TYPE "$1")
-	gfind "$GRUB_ANDROID_SUPPORTED_FS" "$fs" >/dev/null || return
+	[ "$fs" ] && gfind "$GRUB_ANDROID_SUPPORTED_FS" "$fs" >/dev/null || return
+
 	part_mnt=$(tmpmount "$1")
 	[ "$part_mnt" ] &&
 		mnt_pt=$part_mnt ||
@@ -363,4 +366,5 @@ for partition in $(partitions); do
 	fi
 
 	mount_find "$partition"
-done
+done |
+	sed 's/\xFF/\xFF\xFF/g; s/\x00/\xFF0/g'

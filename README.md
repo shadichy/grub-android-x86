@@ -21,7 +21,7 @@ Alternatively, you can use the following method for distros that don't have offi
 
 ### Quick install
 
-Make sure you have su permission (`sudo su` or `doas su`) and /usr/local/bin is in `$PATH`
+Make sure you have superuser permission (`sudo su` or `doas su`) and /usr/local/bin is in your `$PATH`
 
 ```sh
 wget -O /etc/grub.d/30_android-prober https://github.com/shadichy/grub-android-x86/raw/master/30_android-prober

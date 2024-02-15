@@ -74,17 +74,22 @@ gen_entry() {
 	detect=$1
 	shift
 
-	IFS="\0"
-	set -- $detect
+	i=1
+	while read -rd $'\0' arg; do
+	case $i in
+	1)device=$arg;;
+	2)src=$arg;;
+	3)os=$arg;;
+	4)kernels=$arg;;
+	5)initrds=$arg;;
+	6)ucodes=$arg;;
+	7)system=$arg;;
+	8)data=$arg;;
+	*)break;;
+	esac
+	i=$((i+1))
+	done < <(sed 's/\xFF0/\xFF\x00/g; s/\xFF\(.\)/\1/g' <<<"$detect")
 
-	device=$1
-	src=$2
-	os=$3
-	kernels=$4
-	initrds=$5
-	ucodes=$6
-	system=$7
-	data=$8
 	ucode_list=""
 	ucode=""
 	disk="$(prepare_grub_to_access_device "$device")"
@@ -171,9 +176,7 @@ $EXTENDED_ENTRIES
 
 EOF
 }
-IFS="
-"
-for detect in $(grub-android-prober); do
+
+while read -r detect; do
 	gen_entry "$detect"
-done
-unset IFS
+done < <(grub-android-prober)
