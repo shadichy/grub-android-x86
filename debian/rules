@@ -14,3 +14,5 @@ binary-indep:
 	dh_installchangelogs -i
 	dh_compress -i
 	dh_builddeb -i
+
+clean:

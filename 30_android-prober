@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/bash
 set -e
 
 # grub-mkconfig helper script.
@@ -40,6 +40,7 @@ android_entry() {
 	[ "$type" != "default" ] &&
 		case "$kernels" in
 		gearlock*) title="$title, with ${kernel##*/} - $system" ;;
+		ab) title="$title - Slot $(case "${kernel}" in *_a) echo A ;; *) echo B ;; esac)" ;;
 		*) title="$title, with ${kernel##*/}, and ${initrd##*/}" ;;
 		esac
 
@@ -76,18 +77,18 @@ gen_entry() {
 
 	i=1
 	while read -rd $'\0' arg; do
-	case $i in
-	1)device=$arg;;
-	2)src=$arg;;
-	3)os=$arg;;
-	4)kernels=$arg;;
-	5)initrds=$arg;;
-	6)ucodes=$arg;;
-	7)system=$arg;;
-	8)data=$arg;;
-	*)break;;
-	esac
-	i=$((i+1))
+		case $i in
+		1) device=$arg ;;
+		2) src=$arg ;;
+		3) os=$arg ;;
+		4) kernels=$arg ;;
+		5) initrds=$arg ;;
+		6) ucodes=$arg ;;
+		7) system=$arg ;;
+		8) data=$arg ;;
+		*) break ;;
+		esac
+		i=$((i + 1))
 	done < <(sed 's/\xFF0/\xFF\x00/g; s/\xFF\(.\)/\1/g' <<<"$detect")
 
 	ucode_list=""
@@ -135,18 +136,42 @@ $(entry extended "$1" "$2")"
 			ucode_list="$ucode_list $src/boot/$ucode"
 		done
 
-		ROOT_DEVICE=$device
-		ROOT_UUID=$(${grub_probe} --device "$device" --target=fs_uuid 2>/dev/null)
+		if [ "$GRUB_DISABLE_LINUX_UUID" != "true" ]; then
+			ROOT_DEVICE=$device
+			ROOT_UUID=$(${grub_probe} --device "$device" --target=fs_uuid 2>/dev/null)
 
-		[ ! "$GRUB_DISABLE_LINUX_UUID" = "true" ] &&
 			[ "$ROOT_UUID" ] &&
-			ROOT_DEVICE="UUID=$ROOT_UUID"
+				ROOT_DEVICE="UUID=$ROOT_UUID"
+		fi
 
 		old_cmdline=$GRUB_CMDLINE_ANDROID
 		GRUB_CMDLINE_ANDROID="$GRUB_CMDLINE_ANDROID ROOT=$ROOT_DEVICE SYSTEM=$system DATA=$data GEARLOCK=$kernels"
 
 		for kver in $initrds; do
 			parse_to_entry "boot/kernel-$kver" "boot/initrd-$kver.img"
+		done
+
+		GRUB_CMDLINE_ANDROID=$old_cmdline
+		;;
+	ab)
+		for ucode in $ucodes; do
+			ucode_list="$ucode_list $src/$ucode"
+		done
+
+		if [ "$GRUB_DISABLE_LINUX_UUID" != "true" ] &&
+			[ "$GRUB_ENABLE_ANDROID_UUID" = "true" ]; then
+			ROOT_DEVICE=$device
+			ROOT_UUID=$(${grub_probe} --device "$device" --target=fs_uuid 2>/dev/null)
+
+			[ "$ROOT_UUID" ] &&
+				ROOT_DEVICE="UUID=$ROOT_UUID"
+		fi
+
+		old_cmdline=$GRUB_CMDLINE_ANDROID
+		GRUB_CMDLINE_ANDROID="$GRUB_CMDLINE_ANDROID ROOT=$ROOT_DEVICE"
+
+		for mode in a b; do
+			parse_to_entry "kernel_$mode" "initrd_$mode.img"
 		done
 
 		GRUB_CMDLINE_ANDROID=$old_cmdline

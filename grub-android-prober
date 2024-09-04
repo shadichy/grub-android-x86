@@ -210,6 +210,12 @@ parse_path() {
 			[ -f "$microcode" ] &&
 				ucodes="$ucodes,$(basename "$microcode")"
 		done
+	elif [ -e "$path"/misc.img ]; then
+		kernels=ab
+		for microcode in "$path"/${vendor}-ucode.img "$path"/${vendor}-microcode.img; do
+			[ -f "$microcode" ] &&
+				ucodes="$ucodes,$(basename "$microcode")"
+		done
 	else
 		for kernel in "$path"/vmlinu[xz]* "$path"/kernel*; do
 			grub_file_is_not_garbage "$kernel" &&
@@ -261,14 +267,14 @@ find_buildprop() {
 		[ -f "$buildprop_file" ] || return 1
 		cat "$buildprop_file"
 	elif [ -f "$1" ]; then
-		case "$1" in
-		*system.img)
+		case "$(basename "$1")" in
+		system*.img)
 			imgdir="$(tmpmount "$1" loop)" || return 1
 			find_buildprop "$imgdir"
 			umount -lf "$imgdir"
 			rm -rf "$imgdir"
 			;;
-		*system.?fs)
+		system*.?fs)
 			sfsdir="$(tmpmount "$1" loop)" || return 1
 			find_buildprop "$sfsdir/system.img"
 			umount -lf "$sfsdir"
@@ -286,7 +292,9 @@ tmpmount() {
 	mkdir -p "$disktmp" || true
 	if ! { type grub-mount && grub-mount "$1" "$disktmp"; } >/dev/null; then
 		[ "$(blkol TYPE "$1")" = "ntfs" ] && fs=$NTFS
-		mount -o ro,force$opts -t "$fs" "$1" "$disktmp" 2>/dev/null
+		# try with no `force` flag first
+		mount -o ro$opts -t "$fs" "$1" "$disktmp" 2>/dev/null ||
+			mount -o ro,force$opts -t "$fs" "$1" "$disktmp" 2>/dev/null
 	fi
 	echo "$disktmp"
 }

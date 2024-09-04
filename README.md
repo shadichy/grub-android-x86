@@ -46,7 +46,8 @@ Default values are in file `grub-android-prober`
 ### GRUB_ANDROID_SUPPORTED_FS
 
 Specify which filesystems contains Android or the ones this program will try to search for Android on
-> Note: by default, Android initramfs don't support btrfs and some other filesystems
+> Note: by default, Android initramfs don't support btrfs and some other filesystems,
+> but BlissOS does support btrfs
 
 ```sh
 GRUB_ANDROID_SUPPORTED_FS="ext2 ext3 ext4 vfat exfat ntfs"
@@ -66,12 +67,12 @@ GRUB_ANDROID_EXCLUDE="/bin,/boot/efi,/dev,/lib,/lib64,/proc,/run,/sbin,/sys,/tmp
 Specify which files/folders will be search for/detecting
 
 ```sh
-GRUB_ANDROID_SEARCH="system system.img system.sfs"
+GRUB_ANDROID_SEARCH="system system.img system.sfs system_a.img"
 ```
 
 ### GRUB_ANDROID_SEARCH_DEPTH
 
-Specify max recursive directory search level
+Specify max recursive directory search limit
 
 ```sh
 GRUB_ANDROID_SEARCH_DEPTH=5
