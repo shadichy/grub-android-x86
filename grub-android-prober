@@ -13,10 +13,10 @@
 
 # Excluded paths
 # Start with a slash, separated by ',', ending slashes are not needed
-: "${GRUB_ANDROID_EXCLUDE:="/bin,/boot/efi,/efi,/EFI,/dev,/etc,/lib,/lib64,/lib32,/proc,/run,/sbin,/sys,/usr,/tmp,/Program Files,/Program Files (x86),/ProgramData,/Windows,/Volumes,/System,/Library,/cores"}"
+: "${GRUB_ANDROID_EXCLUDE_SEARCH:="/bin,/boot/efi,/efi,/EFI,/dev,/etc,/lib,/lib64,/lib32,/proc,/run,/sbin,/sys,/usr,/tmp,/Program Files,/Program Files (x86),/ProgramData,/Windows,/Volumes,/System,/Library,/cores"}"
 
 # Search image names
-: "${GRUB_ANDROID_INCLUDE:="system system.img system.sfs system.efs system_a system_a.img system_a.sfs system_a.efs system_b system_b.img system_b.sfs system_b.efs"}"
+: "${GRUB_ANDROID_INCLUDE_SEARCH:="system system.img system.sfs system.efs system_a system_a.img system_a.sfs system_a.efs system_b system_b.img system_b.sfs system_b.efs"}"
 
 # Search recursiveness depth
 : "${GRUB_ANDROID_SEARCH_DEPTH:=3}"
@@ -25,6 +25,7 @@
 : "${GRUB_CMDLINE_ANDROID:=""}"
 
 . /etc/default/grub
+. /etc/grub-android.conf
 
 mapdevfs() { readlink -f "$1"; }
 blkol() { blkid "$2" | grep -ioE "$1=\"[a-z0-9-]+\"" | awk -F'"' '{print $2}'; }
@@ -248,7 +249,7 @@ find_os() {
 	local mountpoint=$1 device=$2 foundpaths EXCLUDE=""
 
 	IFS=,
-	for dir in ${GRUB_ANDROID_EXCLUDE}; do
+	for dir in ${GRUB_ANDROID_EXCLUDE_SEARCH}; do
 		EXCLUDE="$EXCLUDE -not \( -path \"${mountpoint}${dir/ /\\ }/*\" -prune \)"
 	done
 	unset IFS
@@ -324,7 +325,7 @@ mount_find() {
 DEPTH=$GRUB_ANDROID_SEARCH_DEPTH
 
 po=
-for f in ${GRUB_ANDROID_INCLUDE}; do
+for f in ${GRUB_ANDROID_INCLUDE_SEARCH}; do
 	INCLUDE="$INCLUDE $po -name \"$f\""
 	po="-o"
 done

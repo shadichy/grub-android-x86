@@ -21,13 +21,13 @@ Specify which filesystems contains Android or the ones this program will try to 
 GRUB_ANDROID_SUPPORTED_FS="ext2 ext3 ext4 vfat exfat ntfs"
 ```
 
-### GRUB_ANDROID_EXCLUDE
+### GRUB_ANDROID_EXCLUDE_SEARCH
 
 Specify which paths will be excluded during search
 > Note: path must start with a slash, and be separated by ',', ending slashes are not needed
 
 ```sh
-GRUB_ANDROID_EXCLUDE="/bin,/boot/efi,/dev,/lib,/lib64,/proc,/run,/sbin,/sys,/tmp"
+GRUB_ANDROID_EXCLUDE_SEARCH="/bin,/boot/efi,/dev,/lib,/lib64,/proc,/run,/sbin,/sys,/tmp"
 ```
 
 ### GRUB_ANDROID_SEARCH

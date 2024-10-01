@@ -39,7 +39,8 @@ chmod +x /etc/grub.d/30_android-prober /usr/local/bin/grub-android-prober
 
 ## Configuration
 
-These are configurations of grub-android-prober in `/etc/defaults/grub`
+These are configurations of grub-android-prober .
+Those can be set in either `/etc/defaults/grub` or `/etc/grub-android.conf`
 
 Default values are in file `grub-android-prober`
 
@@ -53,16 +54,16 @@ Specify which filesystems contains Android or the ones this program will try to 
 GRUB_ANDROID_SUPPORTED_FS="ext2 ext3 ext4 vfat exfat ntfs"
 ```
 
-### GRUB_ANDROID_EXCLUDE
+### GRUB_ANDROID_EXCLUDE_SEARCH
 
 Specify which paths will be excluded during search
 > Note: path must start with a slash, and be separated by ","  (comma) ending slashes are not needed
 
 ```sh
-GRUB_ANDROID_EXCLUDE="/bin,/boot/efi,/dev,/lib,/lib64,/proc,/run,/sbin,/sys,/tmp"
+GRUB_ANDROID_EXCLUDE_SEARCH="/bin,/boot/efi,/dev,/lib,/lib64,/proc,/run,/sbin,/sys,/tmp"
 ```
 
-### GRUB_ANDROID_INCLUDE
+### GRUB_ANDROID_INCLUDE_SEARCH
 
 Specify which files/folders will be search for/detecting
 
