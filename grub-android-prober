@@ -1,7 +1,6 @@
 #!/bin/bash
 
-[ "$EUID" = 0 ] ||
-	{ echo "ERROR: Please run as root" && exit 1; }
+[ "$EUID" = 0 ] || { echo "ERROR: Please run as root" && exit 1; }
 
 . "/usr/share/grub/grub-mkconfig_lib"
 
@@ -16,7 +15,7 @@
 : "${GRUB_ANDROID_EXCLUDE_SEARCH:="/bin,/boot/efi,/efi,/EFI,/dev,/etc,/lib,/lib64,/lib32,/proc,/run,/sbin,/sys,/usr,/tmp,/Program Files,/Program Files (x86),/ProgramData,/Windows,/Volumes,/System,/Library,/cores"}"
 
 # Search image names
-: "${GRUB_ANDROID_INCLUDE_SEARCH:="system system.img system.sfs system.efs system_a system_a.img system_a.sfs system_a.efs system_b system_b.img system_b.sfs system_b.efs"}"
+: "${GRUB_ANDROID_INCLUDE_SEARCH:="system system.img system.sfs system.efs system_a system_a.img system_a.sfs system_a.efs"}"
 
 # Search recursiveness depth
 : "${GRUB_ANDROID_SEARCH_DEPTH:=3}"
@@ -25,13 +24,13 @@
 : "${GRUB_CMDLINE_ANDROID:=""}"
 
 . /etc/default/grub
-. /etc/grub-android.conf
+. /etc/grub-android.conf 2>/dev/null || :
 
 mapdevfs() { readlink -f "$1"; }
-blkol() { blkid "$2" | grep -ioE "$1=\"[a-z0-9-]+\"" | awk -F'"' '{print $2}'; }
-gfind() { grep "$2" <<<"${1}"; }
-gprop() { gfind "${1}" "ro.$2=" | awk -F"=" '{print $2}'; }
-gver() { gprop "${1}" "$2.version${3:+.$3}"; }
+blkid_section() { blkid "$2" | grep -ioE "$1=\"[a-z0-9-]+\"" | awk -F'"' '{print $2}'; }
+grep_string() { grep "$2" <<<"${1}"; }
+grep_prop() { grep_string "${1}" "ro.$2=" | awk -F"=" '{print $2}'; }
+get_version_prop() { grep_prop "${1}" "$2.version${3:+.$3}" | head -1; }
 
 on_sataraid() {
 	type dmraid >/dev/null 2>&1 || return 1
@@ -49,8 +48,7 @@ parse_proc_mdstat() {
 			udevadm info "$@"
 		}
 	fi
-	# shellcheck disable=SC2162
-	while read line; do
+	while read -r line; do
 		for word in $line; do
 			dev="${word%%\[*}"
 			# TODO: factor this out to something in di-utils if
@@ -64,13 +62,13 @@ parse_proc_mdstat() {
 				continue
 			fi
 			raidpart="/dev/$dev"
-			echo "$(mapdevfs "$raidpart")"
+			mapdevfs "$raidpart"
 		done
 	done
 }
 
 parse_proc_swaps() {
-	while read line; do
+	while read -r line; do
 		set -f
 		set -- $line
 		set +f
@@ -113,16 +111,14 @@ partitions() {
 
 	# Also detect OSes on LVM volumes (assumes LVM is active)
 	if type lvs >/dev/null 2>&1; then
-		echo "$(
-			LVM_SUPPRESS_FD_WARNINGS=1 lvs --noheadings --separator : -o vg_name,lv_name 2>&1 |
-				sed "s|-|--|g;s|^[[:space:]]*\(.*\):\(.*\)$|/dev/mapper/\1-\2|" |
-				grep -v "No volume groups found"
-		)"
+		env LVM_SUPPRESS_FD_WARNINGS=1 lvs --noheadings --separator : -o vg_name,lv_name 2>&1 |
+			sed "s|-|--|g;s|^[[:space:]]*\(.*\):\(.*\)$|/dev/mapper/\1-\2|" |
+			grep -v "No volume groups found"
 	fi
 }
 
-parse_path() {
-	[ "${1}" ] || return 1
+check_valid() {
+	[ "$1" ] || return 1
 	local path \
 		path_sysimg=$1 \
 		device=$2 \
@@ -131,8 +127,7 @@ parse_path() {
 		buildver \
 		os \
 		vendor \
-		src \
-		microcode
+		src
 
 	path=$(dirname "$1")
 
@@ -142,9 +137,8 @@ parse_path() {
 	buildprop="$(find_buildprop "$path_sysimg")" || return 1
 
 	# Get abi
-	abi=$(gprop "$buildprop" "product.cpu.abi")
-	case "$abi" in *64*) [ "$LM" ] || return 1 ;;
-	esac
+	abi=$(grep_prop "$buildprop" "product.cpu.abi")
+	case "$abi" in *64*) [ "$LM" ] || return 1 ;; esac
 	case "$abi" in
 	x86*) : x86 ;;
 	arm*) : arm ;;
@@ -156,24 +150,11 @@ parse_path() {
 	buildver="$(grep -E "ro.([a-z]*).version" <<<"$(grep -v build <<<"${buildprop}")")"
 	for version in $buildver; do
 		case $version in
-		ro.bliss.version*)
-			os="Bliss OS $(gver "$buildver" "bliss")"
-			break
-			;;
-		ro.phoenix.version*)
-			os="Phoenix OS $(gver "$buildver" "phoenix" "code")"
-			break
-			;;
-		ro.primeos.version*)
-			os="Prime OS $(gver "$buildver" "primeos" "name")"
-			break
-			;;
-		ro.lineage.version*)
-			os="Lineage OS $(gver "$buildver" "lineage")"
-			;;
-		*)
-			os="AOSP $(gver "$buildver" "build" "release") $(gprop "$buildprop" "build.flavor")"
-			;;
+		ro.bliss.version*) os="Bliss OS $(get_version_prop "$buildver" "bliss")" && break ;;
+		ro.phoenix.version*) os="Phoenix OS $(get_version_prop "$buildver" "phoenix" "code")" && break ;;
+		ro.primeos.version*) os="Prime OS $(get_version_prop "$buildver" "primeos" "name")" && break ;;
+		ro.lineage.version*) os="Lineage OS $(get_version_prop "$buildver" "lineage")" ;;
+		*) os="AOSP $(get_version_prop "$buildver" "build" "release") $(grep_prop "$buildprop" "build.flavor")" ;;
 		esac
 	done
 
@@ -186,16 +167,33 @@ parse_path() {
 	esac
 	vendor=$_
 
-	local kernels initrds ucodes system data
+	local type initrds ucodes system data cmdline
+
+	local kernels kernel initrd
+
+	data=$(ls -d "$path"/data* || head -1)
+	data=$(basename "$data")
+
+	do_ucode() {
+		local u
+		for u in "$1"/${vendor}-{u,micro}code.img; do
+			[ -f "$u" ] && ucodes="$ucodes,$(basename "$u")"
+		done
+	}
+
+	if [ -e "$path"/cmdline.txt ]; then
+		cmdline=$(cat "$path"/cmdline.txt)
+	fi
 
 	# shellcheck disable=SC2144
 	if [ -d "$path"/gearlock ] || [ -e "$path"/gearlock.??? ]; then
-		[ -d "$path"/gearlock ] &&
-			kernels=gearlock ||
-			kernels=$(ls -d "$path"/gearlock.??? || head -1) &&
-			kernels=$(basename "$kernels")
+		if [ -d "$path"/gearlock ]; then
+			type=gearlock
+		else
+			type=$(basename "$(ls -d "$path"/gearlock.??? || head -1)")
+		fi
 
-		list=
+		local list
 		for i in "$path"/boot/kernel-*; do
 			grub_file_is_not_garbage "$i" || continue
 			version="${i#*-}"
@@ -204,45 +202,45 @@ parse_path() {
 		initrds=${list%,}
 
 		system=$(basename "$path_sysimg")
-		data=$(ls -d "$path"/data* || head -1)
-		data=$(basename "$data")
 
-		for microcode in "$path"/boot/${vendor}-ucode.img "$path"/boot/${vendor}-microcode.img; do
-			[ -f "$microcode" ] &&
-				ucodes="$ucodes,$(basename "$microcode")"
-		done
-	elif [ -e "$path"/misc.img ]; then
-		kernels=ab
-		for microcode in "$path"/${vendor}-ucode.img "$path"/${vendor}-microcode.img; do
-			[ -f "$microcode" ] &&
-				ucodes="$ucodes,$(basename "$microcode")"
-		done
+		do_ucode "$path/boot"
+	elif [ -e "$path"/kernel_a ]; then
+		# Skip data partition as we already have fstab
+		if [ -e "$path"/fstab.android ]; then
+			type=fstab
+			data=
+		else
+			type=ab
+		fi
+
+		do_ucode "$path"
 	else
 		for kernel in "$path"/vmlinu[xz]* "$path"/kernel*; do
 			grub_file_is_not_garbage "$kernel" &&
-				kernels="$(basename "$kernel"),$kernels"
+				kernels="$(basename "$kernel"),$type"
 		done
+		type=$kernels
 
 		for initrd in "$path"/initrd*.img "$path"/initramfs*.img; do
 			grub_file_is_not_garbage "$initrd" &&
 				initrds="$(basename "$initrd"),$initrds"
 		done
 
-		for microcode in "$path"/${vendor}-ucode.img "$path"/${vendor}-microcode.img; do
-			[ -f "$microcode" ] &&
-				ucodes="$ucodes,$(basename "$microcode")"
-		done
+		system=$(basename "$path_sysimg")
+
+		do_ucode "$path"
 	fi
 
-	printf '%s\0%s\0%s\0%s\0%s\0%s\0%s\0%s\n' \
+	printf '%s\0%s\0%s\0%s\0%s\0%s\0%s\0%s\0%s\n' \
 		"${device}" \
 		"${src}" \
 		"${os}" \
-		"${kernels%,}" \
+		"${type%,}" \
 		"${initrds%,}" \
 		"${ucodes#,}" \
 		"${system}" \
-		"${data}"
+		"${data}" \
+		"${cmdline}"
 }
 
 find_os() {
@@ -257,7 +255,7 @@ find_os() {
 	foundpaths="$(eval 'timeout 30 find "'"$mountpoint"'" -maxdepth '"$DEPTH"' \(' "$INCLUDE" '\)' "$EXCLUDE")" || return 1
 
 	while read -r path; do
-		parse_path "$path" "$device" || continue
+		check_valid "$path" "$device" || continue
 	done <<<"$foundpaths"
 }
 
@@ -268,19 +266,20 @@ find_buildprop() {
 		[ -f "$buildprop_file" ] || return 1
 		cat "$buildprop_file"
 	elif [ -f "$1" ]; then
-		case "$(basename "$1")" in
-		system*.img)
-			imgdir="$(tmpmount "$1" loop)" || return 1
-			find_buildprop "$imgdir"
-			umount -lf "$imgdir"
-			rm -rf "$imgdir"
+		local loop_dir base_name
+		base_name=$(basename "$1")
+		case "$base_name" in
+		system*.???)
+			loop_dir="$(tmpmount "$1" loop)" || return 1
+			case "$base_name" in
+			system*.img) find_buildprop "$loop_dir" ;;
+			system*.?fs) find_buildprop "$loop_dir/system.img" ;;
+			esac
+			find_buildprop "$loop_dir"
+			umount -lf "$loop_dir"
+			rm -rf "$loop_dir"
 			;;
-		system*.?fs)
-			sfsdir="$(tmpmount "$1" loop)" || return 1
-			find_buildprop "$sfsdir/system.img"
-			umount -lf "$sfsdir"
-			rm -rf "$sfsdir"
-			;;
+		*) ;;
 		esac
 	fi
 	return $?
@@ -290,29 +289,33 @@ tmpmount() {
 	local disktmp opts=${2:+,$2} fs=${3:-auto}
 	disktmp="$(mktemp)"
 	rm -f "$disktmp"
-	mkdir -p "$disktmp" || true
-	if ! { type grub-mount && grub-mount "$1" "$disktmp"; } >/dev/null; then
-		[ "$(blkol TYPE "$1")" = "ntfs" ] && fs=$NTFS
-		# try with no `force` flag first
-		mount -o ro$opts -t "$fs" "$1" "$disktmp" 2>/dev/null ||
-			mount -o ro,force$opts -t "$fs" "$1" "$disktmp" 2>/dev/null
+	mkdir -p "$disktmp" || :
+	if ! { type grub-mount && grub-mount "$1" "$disktmp"; } >/dev/null 2>&1; then
+		[ "$(blkid_section TYPE "$1")" = "ntfs" ] && fs=$NTFS
+
+		local flag
+		for flag in "ro" "ro,force"; do
+			# try with no `force` flag first
+			mount -o $flag$opts -t "$fs" "$1" "$disktmp" 2>/dev/null && break
+		done
 	fi
 	echo "$disktmp"
 }
 
 mount_find() {
-	# check if mount-able, else search from highest top level
+	# check if mountable, else search from highest top level
 
 	local part_mnt mnt_pt fs
 
-	fs=$(blkol TYPE "$1")
-	[ "$fs" ] && gfind "$GRUB_ANDROID_SUPPORTED_FS" "$fs" >/dev/null || return
+	fs=$(blkid_section TYPE "$1")
+	[ "$fs" ] && grep_string "$GRUB_ANDROID_SUPPORTED_FS" "$fs" >/dev/null || return
 
 	part_mnt=$(tmpmount "$1")
-	[ "$part_mnt" ] &&
-		mnt_pt=$part_mnt ||
-		mnt_pt="$(grep "$1" /proc/mounts | head -1)" ||
-		return 1
+	if [ "$part_mnt" ]; then
+		mnt_pt=$part_mnt
+	else
+		mnt_pt="$(grep "$1" /proc/mounts | head -1)" || return 1
+	fi
 
 	find_os "$mnt_pt" "$1"
 
@@ -335,10 +338,7 @@ machine=$(uname -m)
 case "$machine" in
 i?86 | x86_*) : x86 ;;
 arm*) : arm ;;
-*)
-	echo "ERROR: Unsupported processor architecture!" >&2
-	exit 1
-	;;
+*) echo "ERROR: Unsupported processor architecture!" >&2 && exit 1 ;;
 esac
 GENKERNEL_ARCH=$_
 
@@ -347,16 +347,16 @@ LM=
 grep -oqw 'lm' /proc/cpuinfo && LM=1
 
 # check if kernel supports ntfs3
-modinfo ntfs3 >/dev/null && NTFS=ntfs3 || NTFS=ntfs-3g
+modinfo ntfs3 >/dev/null 2>&1 && NTFS=ntfs3 || NTFS=ntfs-3g
 
 mkdir -p /tmp/aprob
 : >"/tmp/aprob/swaps-map"
 if [ -f /proc/swaps ]; then
-	grep "^/dev/" /proc/swaps | parse_proc_swaps >"/tmp/aprob/swaps-map" || true
+	grep "^/dev/" /proc/swaps | parse_proc_swaps >"/tmp/aprob/swaps-map" || :
 fi
 : >"/tmp/aprob/raided-map"
 if [ -f /proc/mdstat ]; then
-	grep "^md" /proc/mdstat | parse_proc_mdstat >"/tmp/aprob/raided-map" || true
+	grep "^md" /proc/mdstat | parse_proc_mdstat >"/tmp/aprob/raided-map" || :
 fi
 
 for partition in $(partitions); do
