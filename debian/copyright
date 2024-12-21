@@ -1,25 +1,16 @@
-Format: <https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/>
-Source: <https://github.com/shadichy/grub-android-x86.git>
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Source: https://github.com/shadichy/grub-android-x86.git
 Upstream-Name: grub-android-prober
-Upstream-Contact: <shadichy.dev@gmail.com>
-
-Files:
- *
-Copyright:
- <2023> <shadichy.dev@gmail.com>
-License: GPL-3.0+
+Upstream-Contact: Bùi Gia Viện <shadichy@blisslabs.org>
 
 Files:
  debian/*
- 30_grub-android-prober
 Copyright:
- 2023 Shadichy <shadichy.dev@gmail.com>
-License: GPL-3.0+
-
-License: GPL-3.0+
- This program is free software: you can redistribute it and/or modify
+ 2024 Bùi Gia Viện <shadichy@blisslabs.org>
+License: GPL-2+
+ This package is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
+ the Free Software Foundation; either version 2 of the License, or
  (at your option) any later version.
  .
  This package is distributed in the hope that it will be useful,
@@ -28,7 +19,7 @@ License: GPL-3.0+
  GNU General Public License for more details.
  .
  You should have received a copy of the GNU General Public License
- along with this program. If not, see <https://www.gnu.org/licenses/>.
+ along with this program. If not, see <https://www.gnu.org/licenses/>
 Comment:
  On Debian systems, the complete text of the GNU General
- Public License version 3 can be found in "/usr/share/common-licenses/GPL-3".
+ Public License version 2 can be found in "/usr/share/common-licenses/GPL-2".

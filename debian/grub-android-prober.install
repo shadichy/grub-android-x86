@@ -1,2 +1,2 @@
-30_grub-android-prober etc/grub.d
+30_android-prober etc/grub.d
 grub-android-prober usr/bin

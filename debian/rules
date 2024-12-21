@@ -1,18 +1,34 @@
 #!/usr/bin/make -f
 
-binary: binary-arch
+# See debhelper(7) (uncomment to enable).
+# Output every command that modifies files on the build system.
+#export DH_VERBOSE = 1
 
-binary-arch: binary-indep
 
-binary-indep:
-	dh_installdirs -a
-	dh_install -i
-	dh_fixperms -i
-	dh_installdeb -i
-	dh_gencontrol -i
-	dh_installdocs -i
-	dh_installchangelogs -i
-	dh_compress -i
-	dh_builddeb -i
+# See FEATURE AREAS in dpkg-buildflags(1).
+#export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
-clean:
+# See ENVIRONMENT in dpkg-buildflags(1).
+# Package maintainers to append CFLAGS.
+#export DEB_CFLAGS_MAINT_APPEND  = -Wall -pedantic
+# Package maintainers to append LDFLAGS.
+#export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
+
+
+%:
+	dh $@
+override_dh_auto_configure:
+
+override_dh_auto_build:
+
+# Some test don't work well, we don't need to run them at package build time.
+override_dh_auto_test:
+
+# Skip tasks that are known to fail
+override_dh_dwz:
+
+# dh_make generated override targets.
+# This is an example for Cmake (see <https://bugs.debian.org/641051>).
+#override_dh_auto_configure:
+#	dh_auto_configure -- \
+#	-DCMAKE_LIBRARY_PATH=$(DEB_HOST_MULTIARCH)

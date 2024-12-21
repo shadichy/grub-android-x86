@@ -1,0 +1,6 @@
+/grub-android-prober/
+/grub-android-prober-*-*-*/
+/.debhelper
+debhelper-build-stamp
+*.substvars
+files
