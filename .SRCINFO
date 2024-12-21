@@ -1,6 +1,6 @@
 pkgbase = grub-android-prober
 	pkgdesc = GRUB Configuration for Android detection (Only works with some sort of filesystems)
-	pkgver = 0.1.1
+	pkgver = 0.1.2
 	pkgrel = 1
 	url = https://github.com/shadichy/grub-android-x86.git
 	arch = any
