@@ -1,4 +1,4 @@
-FROM archlinux/base-devel
+FROM archlinux:latest
 
 # Update packages
 RUN yes | pacman -Syyu base-devel grub bash fakeroot
