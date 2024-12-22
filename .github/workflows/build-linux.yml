@@ -55,7 +55,7 @@ jobs:
           sudo tar -C install -psxf install.tar
 
           # Move content out
-          mv install/*.pkg.tar{.,}* ./
+          mv install/*.pkg.tar* ./
 
           # Clean up
           sudo rm -rf install install.tar
