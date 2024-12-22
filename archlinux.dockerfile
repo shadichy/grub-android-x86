@@ -14,4 +14,4 @@ WORKDIR /grub-android-prober
 
 RUN runuser -u nobody makepkg
 
-RUN mv /grub-android-prober/*.pkg.tar{.,}* /
+RUN mv /grub-android-prober/*.pkg.tar* /
