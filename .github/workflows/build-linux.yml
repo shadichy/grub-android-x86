@@ -72,7 +72,7 @@ jobs:
             metadata.yml
             grub-android-prober_*_*.buildinfo
             grub-android-prober_*_*.changes
-            grub-android-prober-*_*_*.deb
+            grub-android-prober_*_*.deb
             grub-android-prober-*-*-*.pkg.tar*
 
   release:
