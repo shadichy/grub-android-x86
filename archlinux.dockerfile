@@ -12,6 +12,6 @@ RUN chown -hR nobody:nobody /grub-android-prober
 
 WORKDIR /grub-android-prober
 
-RUN su nobody -c 'makepkg -sif'
+RUN runuser -u nobody makepkg
 
 RUN mv /grub-android-prober/*.pkg.tar{.,}*
