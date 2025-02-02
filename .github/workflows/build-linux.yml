@@ -27,22 +27,14 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Debian pacakge
-        run: |
-          # Build docker image
-          docker buildx create --use --name devuan-dev --buildkitd-flags '--allow-insecure-entitlement security.insecure'
-          docker buildx build --builder devuan-dev -f debian/ceres.dockerfile -t devuan --allow security.insecure --output type=tar,dest=install.tar .
+      - name: Build DEB package
+        uses: DevChall-by-SDCY-and-VXM/debian-buildpackage-template@main
+        with:
+          distro: devuan/migrated:ceres-slim
+          package_maintainer: Shadichy <shadichy@blisslabs.org>
 
-          # Export it to install
-          mkdir install
-          sudo tar -C install -psxf install.tar
-
-          # Move content out
-          mv install/*.{deb,buildinfo,changes} ./
-          mv install/metadata.yml .
-
-          # Clean up
-          sudo rm -rf install install.tar
+      - name: Extract artifact
+        run: unzip -o built-deb-files-*.zip
 
       - name: Build Arch pacakge
         run: |
@@ -70,10 +62,12 @@ jobs:
         with:
           path: |
             metadata.yml
-            grub-android-prober_*_*.buildinfo
-            grub-android-prober_*_*.changes
-            grub-android-prober_*_*.deb
-            grub-android-prober-*-*-*.pkg.tar*
+            metadata.yml
+            *_*_*.buildinfo
+            *_*_*.changes
+            *_*_*.deb
+            *_*_*.udeb
+            *.pkg.tar*
 
   release:
     name: Release
