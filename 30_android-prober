@@ -30,12 +30,9 @@ sub_indent() { echo -e "$submenu_indentation$*"; }
 
 android_entry() {
 	local \
-		title=$1 \
-		menuentry_id=$2 \
-		kernel=$3 \
-		initrd=$4 \
-		disk=$5 \
-		cmdline=$6
+		menuentry_id=$1 \
+		kernel=$2 \
+		initrd=$3
 
 	sub_indent "menuentry '$(echo "$title" | grub_quote)' ${CLASS} \$menuentry_id_option '$menuentry_id' {"
 
@@ -57,8 +54,8 @@ android_entry() {
 
 	sub_indent "	insmod gzio"
 	echo "$disk" | sed "s/^/$submenu_indentation	/gm"
-	sub_indent "	linux $kernel $cmdline root=/dev/ram0"
-	sub_indent "	initrd $initrd"
+	sub_indent "	linux $kernel $cmdline"
+	sub_indent "	initrd ${ucode_list# } $initrd"
 
 	sub_indent "}\n"
 }
@@ -68,8 +65,8 @@ gen_entry() {
 		device \
 		src \
 		os \
-		detected_type \
-		initrds \
+		kernel_type \
+		bootfile \
 		ucodes \
 		system \
 		data \
@@ -83,8 +80,8 @@ gen_entry() {
 		1) device=$arg ;;
 		2) src=$arg ;;
 		3) os=$arg ;;
-		4) detected_type=$arg ;;
-		5) initrds=$arg ;;
+		4) kernel_type=$arg ;;
+		5) bootfile=$arg ;;
 		6) ucodes=$arg ;;
 		7) system=$arg ;;
 		8) data=$arg ;;
@@ -111,16 +108,13 @@ gen_entry() {
 	# yet, so it's empty. In a submenu it will be equal to '\t' (one tab).
 	submenu_indentation=""
 
-	local title
+	title=$os
 
 	entry() {
 		android_entry \
-			"$title" \
 			"${OS}-${src##*/}-${1##*/}-${2##*/}-${type}-${boot_device_id}" \
 			"${src}/${1}" \
-			"${ucode_list# } ${src}/${2}" \
-			"$disk" \
-			"$cmdline"
+			"${src}/${2}"
 	}
 
 	parse_to_entry() {
@@ -140,75 +134,68 @@ gen_entry() {
 	fi
 
 	IFS=","
-	case "$detected_type" in
-	gearlock*)
-		for ucode in $ucodes; do
-			ucode_list="$ucode_list $src/boot/$ucode"
-		done
 
+	for ucode in $ucodes; do
+		ucode_list="$ucode_list $src/$ucode"
+	done
+
+	case "$kernel_type" in
+	ab | fstab)
 		ROOT_DEVICE=$device
-		if [ "$GRUB_DISABLE_LINUX_UUID" != "true" ]; then
-			ROOT_UUID=$(${grub_probe} --device "$device" --target=fs_uuid 2>/dev/null)
 
-			[ "$ROOT_UUID" ] &&
-				ROOT_DEVICE="UUID=$ROOT_UUID"
-		fi
-
-		cmdline="$cmdline ROOT=$ROOT_DEVICE SYSTEM=$system DATA=$data GEARLOCK=$detected_type"
-
-		local kver
-		for kver in $initrds; do
-			[ "$type" = "default" ] || title="$os, with kernel-$kver - $system"
-			parse_to_entry "boot/kernel-$kver" "boot/initrd-$kver.img"
-		done
-		;;
-	*)
-		for ucode in $ucodes; do
-			ucode_list="$ucode_list $src/$ucode"
-		done
-
-		if [ "$data" ]; then
-			cmdline="$cmdline DATA=$data"
-		fi
-
-		case "$detected_type" in
-		ab | fstab)
-			ROOT_DEVICE=$device
-
-			case "$detected_type" in
-			fstab) if [ "$GRUB_DISABLE_LINUX_UUID" != "true" ]; then
+		case "$kernel_type" in
+		fstab)
+			if [ "$GRUB_DISABLE_LINUX_UUID" != "true" ]; then
 				ROOT_UUID=$(${grub_probe} --device "$device" --target=fs_uuid 2>/dev/null)
 				[ "$ROOT_UUID" ] && ROOT_DEVICE="UUID=$ROOT_UUID"
-			fi ;;
-			*) ;;
-			esac
+			fi
+			if [ "$type" = "default" ] && [ "$bootfile" ]; then
+				case "$bootfile" in
+				*.env.cfg)
+					disk="$disk\nsource $src/$bootfile"
+					cmdline="$cmdline \$cmdline"
+					;;
+				*) ;;
+				esac
+			fi
+			;;
+		*) ;;
+		esac
 
-			cmdline="$cmdline ROOT=$ROOT_DEVICE"
+		cmdline="$cmdline ROOT=$ROOT_DEVICE"
 
+		if [ "$kernel_type" = fstab ] && [ "$system" = traditional ]; then
+			parse_to_entry "kernel" "initrd.img"
+		else
 			local slot
 			for slot in a b; do
 				[ "$type" = "default" ] || title="$os - Slot ${slot^}"
 				cmdline="$cmdline androidboot.slot_suffix=_$slot"
 				parse_to_entry "kernel_$slot" "initrd_$slot.img"
 			done
-			;;
-		*)
+		fi
+		;;
+	*)
 
-			if [ "$system" ]; then
-				cmdline="$cmdline SYSTEM=$system"
-			fi
+		if [ "$system" ]; then
+			cmdline="$cmdline SYSTEM=$system"
+		fi
 
-			cmdline="$cmdline ROOT=$device"
+		cmdline="$cmdline ROOT=$device"
 
-			local kernels=$detected_type kernel initrd
-			for kernel in $kernels; do
-				for initrd in $initrds; do
-					[ "$type" = "default" ] || title="$title, with ${kernel##*/}, and ${initrd##*/}"
-					parse_to_entry "$kernel" "$initrd"
-				done
+		if [ "$data" ]; then
+			cmdline="$cmdline DATA=$data"
+		fi
+
+		local \
+			kernels=$kernel_type initrds=$bootfile \
+			kernel initrd
+		for kernel in $kernels; do
+			for initrd in $initrds; do
+				[ "$type" = "default" ] || title="$title, with ${kernel##*/}, and ${initrd##*/}"
+				parse_to_entry "$kernel" "$initrd"
 			done
-			;;
-		esac
+		done
 		;;
 	esac
 

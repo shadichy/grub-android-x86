@@ -8,14 +8,14 @@
 # Note that by default, mostly Android initrds don't support btrfs and some other
 # filesystems
 # For higher versions, btrfs and some other filesystems are supported
-: "${GRUB_ANDROID_SUPPORTED_FS:="ext2 ext3 ext4 vfat exfat"}"
+: "${GRUB_ANDROID_SUPPORTED_FS:="ext2 ext3 ext4 vfat exfat btrfs"}"
 
 # Excluded paths
 # Start with a slash, separated by ',', ending slashes are not needed
-: "${GRUB_ANDROID_EXCLUDE_SEARCH:="/bin,/boot/efi,/efi,/EFI,/dev,/etc,/lib,/lib64,/lib32,/proc,/run,/sbin,/sys,/usr,/tmp,/Program Files,/Program Files (x86),/ProgramData,/Windows,/Volumes,/System,/Library,/cores"}"
+: "${GRUB_ANDROID_EXCLUDE_SEARCH:="/bin,/boot/efi,/efi,/EFI,/dev,/etc,/lib,/lib64,/lib32,/proc,/run,/sbin,/srv,/sys,/usr,/var,/tmp,/Program Files,/Program Files (x86),/ProgramData,/Windows,/Users,/Volumes,/System,/Library,/cores,/@,/@home,/@root,/@srv,/@cache,/@tmp,/@log"}"
 
 # Search image names
-: "${GRUB_ANDROID_INCLUDE_SEARCH:="system system.img system.sfs system.efs system_a system_a.img system_a.sfs system_a.efs"}"
+: "${GRUB_ANDROID_INCLUDE_SEARCH:="system_a.efs system_a.sfs system_a.img system_a system.efs system.sfs system.img system"}"
 
 # Search recursiveness depth
 : "${GRUB_ANDROID_SEARCH_DEPTH:=3}"
@@ -167,7 +167,7 @@ check_valid() {
 	esac
 	vendor=$_
 
-	local type initrds ucodes system data cmdline
+	local kernel_type bootfile ucodes system data cmdline
 
 	local kernels kernel initrd
 
@@ -186,44 +186,36 @@ check_valid() {
 	fi
 
 	# shellcheck disable=SC2144
-	if [ -d "$path"/gearlock ] || [ -e "$path"/gearlock.??? ]; then
-		if [ -d "$path"/gearlock ]; then
-			type=gearlock
-		else
-			type=$(basename "$(ls -d "$path"/gearlock.??? || head -1)")
+	if [ -e "$path"/fstab.android ]; then
+		kernel_type=fstab
+		data=
+
+		if [ -e "$path"/kernel ]; then
+			system=traditional
 		fi
 
-		local list
-		for i in "$path"/boot/kernel-*; do
-			grub_file_is_not_garbage "$i" || continue
-			version="${i#*-}"
-			[ -e "$path/boot/initrd-${version}.img" ] && list="$version,$list"
-		done
-		initrds=${list%,}
+		if [ -d "$path"/boot/grub ] || [ -f "$path"/refind_linux.conf ]; then
+			# do not handle installations with custom bootloaders
+			return 1
+		elif [ -f "$path"/*.env.cfg ]; then
+			bootfile=$(basename "$path"/*.env.cfg)
+		fi
 
-		system=$(basename "$path_sysimg")
-
-		do_ucode "$path/boot"
+		do_ucode "$path"
 	elif [ -e "$path"/kernel_a ]; then
-		# Skip data partition as we already have fstab
-		if [ -e "$path"/fstab.android ]; then
-			type=fstab
-			data=
-		else
-			type=ab
-		fi
+		kernel_type=ab
 
 		do_ucode "$path"
 	else
 		for kernel in "$path"/vmlinu[xz]* "$path"/kernel*; do
 			grub_file_is_not_garbage "$kernel" &&
-				kernels="$(basename "$kernel"),$type"
+				kernels="$(basename "$kernel"),$kernel_type"
 		done
-		type=$kernels
+		kernel_type=$kernels
 
 		for initrd in "$path"/initrd*.img "$path"/initramfs*.img; do
 			grub_file_is_not_garbage "$initrd" &&
-				initrds="$(basename "$initrd"),$initrds"
+				bootfile="$(basename "$initrd"),$bootfile"
 		done
 
 		system=$(basename "$path_sysimg")
@@ -235,8 +227,8 @@ check_valid() {
 		"${device}" \
 		"${src}" \
 		"${os}" \
-		"${type%,}" \
-		"${initrds%,}" \
+		"${kernel_type%,}" \
+		"${bootfile%,}" \
 		"${ucodes#,}" \
 		"${system}" \
 		"${data}" \
@@ -290,47 +282,54 @@ tmpmount() {
 	disktmp="$(mktemp)"
 	rm -f "$disktmp"
 	mkdir -p "$disktmp" || :
-	if ! { type grub-mount && grub-mount "$1" "$disktmp"; } >/dev/null 2>&1; then
-		[ "$(blkid_section TYPE "$1")" = "ntfs" ] && fs=$NTFS
+	# if ! { type grub-mount && grub-mount "$1" "$disktmp"; } >/dev/null 2>&1; then
+	[ "$(blkid_section TYPE "$1")" = "ntfs" ] && fs=$NTFS
 
-		local flag
-		for flag in "ro" "ro,force"; do
-			# try with no `force` flag first
-			mount -o $flag$opts -t "$fs" "$1" "$disktmp" 2>/dev/null && break
-		done
+	local roflag mounted
+	for roflag in "ro" "ro,force"; do
+		# try with no `force` flag first
+		if mount -o $roflag$opts -t "$fs" "$1" "$disktmp" >/dev/null 2>&1; then
+			mounted=1
+			break
+		fi
+	done
+	# fi
+	if [ "$mounted" ]; then
+		echo "$disktmp"
+	else
+		return 1
 	fi
-	echo "$disktmp"
 }
 
 mount_find() {
 	# check if mountable, else search from highest top level
 
-	local part_mnt mnt_pt fs
+	local partition_mp existing_mp filesystem
 
-	fs=$(blkid_section TYPE "$1")
-	[ "$fs" ] && grep_string "$GRUB_ANDROID_SUPPORTED_FS" "$fs" >/dev/null || return
+	filesystem=$(blkid_section TYPE "$1")
+	[ "$filesystem" ] && grep_string "$GRUB_ANDROID_SUPPORTED_FS" "$filesystem" >/dev/null || return
 
-	part_mnt=$(tmpmount "$1")
-	if [ "$part_mnt" ]; then
-		mnt_pt=$part_mnt
+	partition_mp=$(tmpmount "$1")
+	if [ "$partition_mp" ]; then
+		existing_mp=$partition_mp
 	else
-		mnt_pt="$(grep "$1" /proc/mounts | head -1)" || return 1
+		existing_mp="$(grep "$1" /proc/mounts | head -1 | awk '{print $2}')" || return 1
 	fi
 
-	find_os "$mnt_pt" "$1"
+	find_os "$existing_mp" "$1"
 
-	if [ "$part_mnt" ]; then
-		umount -lf "$part_mnt"
-		rm -rf "$part_mnt"
+	if [ "$partition_mp" ]; then
+		umount -lf "$partition_mp"
+		rm -rf "$partition_mp"
 	fi
 }
 
 DEPTH=$GRUB_ANDROID_SEARCH_DEPTH
 
-po=
-for f in ${GRUB_ANDROID_INCLUDE_SEARCH}; do
-	INCLUDE="$INCLUDE $po -name \"$f\""
-	po="-o"
+delim=
+for file in ${GRUB_ANDROID_INCLUDE_SEARCH}; do
+	INCLUDE="$INCLUDE $delim -name \"$file\""
+	delim="-o"
 done
 
 # check cpu architecure
@@ -338,7 +337,10 @@ machine=$(uname -m)
 case "$machine" in
 i?86 | x86_*) : x86 ;;
 arm*) : arm ;;
-*) echo "ERROR: Unsupported processor architecture!" >&2 && exit 1 ;;
+*)
+	echo "ERROR: Unsupported processor architecture!" >&2
+	exit 1
+	;;
 esac
 GENKERNEL_ARCH=$_
 
@@ -347,7 +349,11 @@ LM=
 grep -oqw 'lm' /proc/cpuinfo && LM=1
 
 # check if kernel supports ntfs3
-modinfo ntfs3 >/dev/null 2>&1 && NTFS=ntfs3 || NTFS=ntfs-3g
+if modinfo ntfs3 >/dev/null 2>&1; then
+	NTFS=ntfs3
+else
+	NTFS=ntfs-3g
+fi
 
 mkdir -p /tmp/aprob
 : >"/tmp/aprob/swaps-map"
