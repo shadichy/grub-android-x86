@@ -336,7 +336,8 @@ done
 machine=$(uname -m)
 case "$machine" in
 i?86 | x86_*) : x86 ;;
-arm*) : arm ;;
+arm* | aarch*) : arm ;;
+risc*) : riscv ;;
 *)
 	echo "ERROR: Unsupported processor architecture!" >&2
 	exit 1
