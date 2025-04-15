@@ -34,7 +34,7 @@ jobs:
           package_maintainer: Shadichy <shadichy@blisslabs.org>
 
       - name: Extract artifact
-        run: unzip -o built-deb-files-*.zip
+        run: unzip -o built-deb-files.zip
 
       - name: Build Arch pacakge
         run: |
