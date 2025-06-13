@@ -30,7 +30,7 @@ mapdevfs() { readlink -f "$1"; }
 blkid_section() { blkid "$2" | grep -ioE "$1=\"[a-z0-9-]+\"" | awk -F'"' '{print $2}'; }
 grep_string() { grep "$2" <<<"${1}"; }
 grep_prop() { grep_string "${1}" "ro.$2=" | awk -F"=" '{print $2}'; }
-get_version_prop() { grep_prop "${1}" "$2.version${3:+.$3}" | head -1z; }
+get_version_prop() { grep_prop "${1}" "$2.version${3:+.$3}" | head -1; }
 
 on_sataraid() {
 	type dmraid >/dev/null 2>&1 || return 1
