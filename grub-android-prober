@@ -147,7 +147,7 @@ check_valid() {
 	[ "$_" = "$GENKERNEL_ARCH" ] || return 1
 
 	# Parse version
-	buildver="$(grep -E "ro.([a-z]*).version" <<<"$(grep -v build <<<"${buildprop}")")"
+	buildver="$(grep -E "ro\.([a-z]*)\.version" <<<"$(grep -v build <<<"${buildprop}")")"
 	for version in $buildver; do
 		case $version in
 		ro.bliss.version*) os="Bliss OS $(get_version_prop "$buildver" "bliss")" && break ;;
