@@ -53,7 +53,7 @@ android_entry() {
 	fi
 
 	sub_indent "	insmod gzio"
-	echo "$disk" | sed "s/^/$submenu_indentation	/gm"
+	echo -e "$disk" | sed "s/^/$submenu_indentation	/gm"
 	sub_indent "	linux $kernel $cmdline"
 	sub_indent "	initrd ${ucode_list# } $initrd"
 
@@ -152,8 +152,8 @@ gen_entry() {
 			if [ "$type" = "default" ] && [ "$bootfile" ]; then
 				case "$bootfile" in
 				*.env.cfg)
-					disk="$disk\nsource $src/$bootfile"
-					cmdline="$cmdline \$cmdline"
+					disk="$disk\nsource $src/boot/$bootfile"
+					cmdline="$cmdline \$cmdline androidboot.bootctrl_bootcfg=/boot/$bootfile"
 					;;
 				*) ;;
 				esac
@@ -166,12 +166,19 @@ gen_entry() {
 
 		if [ "$kernel_type" = fstab ] && [ "$system" = traditional ]; then
 			parse_to_entry "kernel" "initrd.img"
+		elif [ "$kernel_type" = fstab ] && [[ "$system" = _* ]]; then
+			parse_to_entry "kernel${system}" "initrd${system}.img"
+			# Handle recovery mode
+			title="$os - Recovery Mode"
+			cmdline="$cmdline androidboot.mode=recovery androidboot.force_normal_boot=0"
+			parse_to_entry "kernel${system}" "initrd${system}.img"
 		else
-			local slot
+			local slot _cmdline=$cmdline
 			for slot in a b; do
 				[ "$type" = "default" ] || title="$os - Slot ${slot^}"
 				cmdline="$cmdline androidboot.slot_suffix=_$slot"
 				parse_to_entry "kernel_$slot" "initrd_$slot.img"
+				cmdline=$_cmdline
 			done
 		fi
 		;;

@@ -1,7 +1,7 @@
 # Maintainer: shadichy <shadichy.dev@gmail.com>
 
 pkgname='grub-android-prober-git'
-pkgver='0.1.3'
+pkgver='0.1.4'
 pkgrel='1'
 pkgdesc='GRUB Configuration for Android detection (Only works with some sort of filesystems)'
 arch=('any')

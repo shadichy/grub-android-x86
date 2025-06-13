@@ -30,7 +30,7 @@ mapdevfs() { readlink -f "$1"; }
 blkid_section() { blkid "$2" | grep -ioE "$1=\"[a-z0-9-]+\"" | awk -F'"' '{print $2}'; }
 grep_string() { grep "$2" <<<"${1}"; }
 grep_prop() { grep_string "${1}" "ro.$2=" | awk -F"=" '{print $2}'; }
-get_version_prop() { grep_prop "${1}" "$2.version${3:+.$3}" | head -1; }
+get_version_prop() { grep_prop "${1}" "$2.version${3:+.$3}" | head -1z; }
 
 on_sataraid() {
 	type dmraid >/dev/null 2>&1 || return 1
@@ -154,7 +154,7 @@ check_valid() {
 		ro.phoenix.version*) os="Phoenix OS $(get_version_prop "$buildver" "phoenix" "code")" && break ;;
 		ro.primeos.version*) os="Prime OS $(get_version_prop "$buildver" "primeos" "name")" && break ;;
 		ro.lineage.version*) os="Lineage OS $(get_version_prop "$buildver" "lineage")" ;;
-		*) os="AOSP $(get_version_prop "$buildver" "build" "release") $(grep_prop "$buildprop" "build.flavor")" ;;
+		*) os=$(echo -n "AOSP" $(get_version_prop "$buildver" "build" "release") $(grep_prop "$buildprop" "build.flavor")) ;;
 		esac
 	done
 
@@ -194,11 +194,23 @@ check_valid() {
 			system=traditional
 		fi
 
+		local _bootfile
 		if [ -d "$path"/boot/grub ] || [ -f "$path"/refind_linux.conf ]; then
 			# do not handle installations with custom bootloaders
 			return 1
-		elif [ -f "$path"/*.env.cfg ]; then
-			bootfile=$(basename "$path"/*.env.cfg)
+		elif [ -f "${_bootfile:=$(find "$path"/boot -maxdepth 1 -mindepth 1 -type f -iname '*.env.cfg')}" ]; then
+			bootfile=$(basename "$_bootfile")
+			local _cmdline=$cmdline
+			source "$_bootfile"
+			set -- $cmdline
+			local arg
+			for arg in "$@"; do
+				case "$arg" in
+				androidboot.slot_suffix=*) system=${arg##*=} ;;
+				*) ;;
+				esac
+			done
+			cmdline=$_cmdline
 		fi
 
 		do_ucode "$path"
@@ -223,7 +235,7 @@ check_valid() {
 		do_ucode "$path"
 	fi
 
-	printf '%s\0%s\0%s\0%s\0%s\0%s\0%s\0%s\0%s\n' \
+	printf '%s\0%s\0%s\0%s\0%s\0%s\0%s\0%s\0%s\0\n' \
 		"${device}" \
 		"${src}" \
 		"${os}" \
