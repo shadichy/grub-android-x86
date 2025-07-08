@@ -195,7 +195,7 @@ check_valid() {
 		fi
 
 		local _bootfile
-		if [ -d "$path"/boot/grub ] || [ -f "$path"/refind_linux.conf ]; then
+		if [ -f "$path"/boot/grub/grub.cfg ] || [ -f "$path"/refind_linux.conf ]; then
 			# do not handle installations with custom bootloaders
 			return 1
 		elif [ -f "${_bootfile:=$(find "$path"/boot -maxdepth 1 -mindepth 1 -type f -iname '*.env.cfg')}" ]; then
